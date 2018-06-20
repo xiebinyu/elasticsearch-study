@@ -165,7 +165,7 @@ public class ElasticSearchTest2 {
     public void testSearch5() {
         // 注意QUERY_THEN_FETCH和注意QUERY_AND_FETCH返回的记录数不一样，前者默认10条，后者是50条（5个分片）
         SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.rangeQuery("size").gt(1).lte(9))
+                .setQuery(QueryBuilders.rangeQuery("size1").gt(1).lte(10))
                 .addSort("author", SortOrder.DESC)
                 // 下面setFrom和setSize用于设置查询结果进行分页
                 .setFrom(0)
@@ -181,13 +181,13 @@ public class ElasticSearchTest2 {
     public void testSearch6() {
         // 注意QUERY_THEN_FETCH和注意QUERY_AND_FETCH返回的记录数不一样，前者默认10条，后者是50条（5个分片）
         SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.rangeQuery("size").gt(1).lte(9))
+                .setQuery(QueryBuilders.rangeQuery("size1").gt(1).lte(20))
                 /*
                     select avg(age) as avg_name from person;
                     那么这里的avg("balance")--->就是返回结果avg_name这个别名
                  */
-                .addAggregation(AggregationBuilders.avg("avg_size").field("size"))
-                .addAggregation(AggregationBuilders.max("max_size").field("size"))
+                .addAggregation(AggregationBuilders.avg("avg_size").field("size1"))
+                .addAggregation(AggregationBuilders.max("max_size").field("size1"))
                 .get();
 //        System.out.println(response);
         /*

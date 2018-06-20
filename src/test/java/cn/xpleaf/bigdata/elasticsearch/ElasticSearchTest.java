@@ -84,8 +84,8 @@ public class ElasticSearchTest {
         source.put("name", "flume.map");
         source.put("author", "Cloudera");
         source.put("version", "1.8.0");
-        source.put("size", 10);
-        IndexResponse response = client.prepareIndex(index, type, "10").setSource(source).get();
+        source.put("size", 6);// 数字不能加双引号，否则不能用于计算
+        IndexResponse response = client.prepareIndex(index, type, "14").setSource(source).get();
         System.out.println(response.isCreated());
     }
 
