@@ -6,11 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.count.CountResponse;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -42,22 +39,23 @@ import java.util.Map;
 public class ElasticSearchTest {
 
     private TransportClient client;
-    private String index = "bigdata";
+    private String index = "project_study";
     private String type = "product";
 
     @Before
     public void setup() throws UnknownHostException {
-        Settings settings = Settings.builder().put("cluster.name", "bigdata-08-28").build();
+        System.out.println("---开始连接！---");
+        Settings settings = Settings.builder().put("cluster.name", "elasticsearch").build();
         client = TransportClient.builder().settings(settings).build();
-        TransportAddress ta1 = new InetSocketTransportAddress(InetAddress.getByName("uplooking01"), 9300);
-        TransportAddress ta2 = new InetSocketTransportAddress(InetAddress.getByName("uplooking02"), 9300);
-        TransportAddress ta3 = new InetSocketTransportAddress(InetAddress.getByName("uplooking03"), 9300);
-        client.addTransportAddresses(ta1, ta2, ta3);
-        /*settings = client.settings();
+        TransportAddress ta = new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300);
+        client.addTransportAddresses(ta);
+        settings = client.settings();
         Map<String, String> asMap = settings.getAsMap();
         for(Map.Entry<String, String> setting : asMap.entrySet()) {
             System.out.println(setting.getKey() + "::" + setting.getValue());
-        }*/
+        }
+        System.out.println("---连接成功！---");
+        System.out.println();
     }
 
     /**
@@ -71,7 +69,7 @@ public class ElasticSearchTest {
      */
     @Test
     public void testAddJSON() {
-        String source = "{\"name\":\"sqoop\", \"author\": \"apache\", \"version\": \"1.4.6\"}";
+        String source = "{\"name\":\"sqoop.json\", \"author\": \"apache\", \"version\": \"1.4.6\"}";
         IndexResponse response = client.prepareIndex(index, type, "4").setSource(source).get();
         System.out.println(response.isCreated());
     }
@@ -83,10 +81,11 @@ public class ElasticSearchTest {
     @Test
     public void testAddMap() {
         Map<String, Object> source = new HashMap<String, Object>();
-        source.put("name", "flume");
+        source.put("name", "flume.map");
         source.put("author", "Cloudera");
         source.put("version", "1.8.0");
-        IndexResponse response = client.prepareIndex(index, type, "5").setSource(source).get();
+        source.put("size", 10);
+        IndexResponse response = client.prepareIndex(index, type, "10").setSource(source).get();
         System.out.println(response.isCreated());
     }
 
@@ -99,7 +98,7 @@ public class ElasticSearchTest {
      */
     @Test
     public void testAddObj() throws JsonProcessingException {
-        Product product = new Product("kafka", "linkedIn", "0.10.0.1", "kafka.apache.org");
+        Product product = new Product("kafka.obj", "linkedIn", "0.10.0.1", "kafka.apache.org");
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writeValueAsString(product);
         System.out.println(json);
@@ -115,12 +114,13 @@ public class ElasticSearchTest {
     public void testAddXContentBuilder() throws IOException {
         XContentBuilder source = XContentFactory.jsonBuilder();
         source.startObject()
-                .field("name", "redis")
+                .field("name", "redis.source")
                 .field("author", "redis")
                 .field("version", "3.2.0")
                 .field("url", "redis.cn")
+                .field("size", 100)
                 .endObject();
-        IndexResponse response = client.prepareIndex(index, type, "7").setSource(source).get();
+        IndexResponse response = client.prepareIndex(index, type, "12").setSource(source).get();
         System.out.println(response.isCreated());
     }
 
@@ -129,7 +129,7 @@ public class ElasticSearchTest {
      */
     @Test
     public void testGet() {
-        GetResponse response = client.prepareGet(index, type, "6").get();
+        GetResponse response = client.prepareGet(index, type, "3").get();
         Map<String, Object> map = response.getSource();
         /*for(Map.Entry<String, Object> me : map.entrySet()) {
             System.out.println(me.getKey() + "=" + me.getValue());
@@ -150,8 +150,8 @@ public class ElasticSearchTest {
         /*String source = "{\"doc\":{\"url\": \"http://flume.apache.org\"}}";
         UpdateResponse response = client.prepareUpdate(index, type, "4").setSource(source.getBytes()).get();*/
         // 使用下面这种方式也是可以的
-        String source = "{\"url\": \"http://flume.apache.org\"}";
-        UpdateResponse response = client.prepareUpdate(index, type, "4").setDoc(source.getBytes()).get();
+        String source = "{\"url\": \"http://flume.apache.org\", \"author\": \"mongo\"}";
+        UpdateResponse response = client.prepareUpdate(index, type, "10").setDoc(source.getBytes()).get();
         System.out.println(response.getVersion());
     }
 
@@ -160,7 +160,7 @@ public class ElasticSearchTest {
      */
     @Test
     public void testDelete() {
-        DeleteResponse response = client.prepareDelete(index, type, "5").get();
+        DeleteResponse response = client.prepareDelete(index, type, "12").get();
         System.out.println(response.getVersion());
     }
 
@@ -169,9 +169,9 @@ public class ElasticSearchTest {
      */
     @Test
     public void testBulk() {
-        IndexRequestBuilder indexRequestBuilder = client.prepareIndex(index, type, "8")
+        IndexRequestBuilder indexRequestBuilder = client.prepareIndex(index, type, "3")
                 .setSource("{\"name\":\"elasticsearch\", \"url\":\"http://www.elastic.co\"}");
-        UpdateRequestBuilder updateRequestBuilder = client.prepareUpdate(index, type, "1").setDoc("{\"url\":\"http://hadoop.apache.org\"}");
+        UpdateRequestBuilder updateRequestBuilder = client.prepareUpdate(index, type, "4").setDoc("{\"url\":\"http://hadoop.apache.org\"}");
         BulkRequestBuilder bulk = client.prepareBulk();
         BulkResponse bulkResponse = bulk.add(indexRequestBuilder).add(updateRequestBuilder).get();
         Iterator<BulkItemResponse> it = bulkResponse.iterator();

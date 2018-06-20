@@ -37,18 +37,16 @@ import java.util.Map;
 public class ElasticSearchTest3 {
 
     private TransportClient client;
-    private String index = "bigdata";
+    private String index = "project_study";
     private String type = "product";
     private String[] indics = {"chinese"};
 
     @Before
     public void setUp() throws UnknownHostException {
-        Settings settings = Settings.builder().put("cluster.name", "bigdata-08-28").build();
+        Settings settings = Settings.builder().put("cluster.name", "elasticsearch").build();
         client = TransportClient.builder().settings(settings).build();
-        TransportAddress ta1 = new InetSocketTransportAddress(InetAddress.getByName("uplooking01"), 9300);
-        TransportAddress ta2 = new InetSocketTransportAddress(InetAddress.getByName("uplooking02"), 9300);
-        TransportAddress ta3 = new InetSocketTransportAddress(InetAddress.getByName("uplooking03"), 9300);
-        client.addTransportAddresses(ta1, ta2, ta3);
+        TransportAddress ta = new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300);
+        client.addTransportAddresses(ta);
     }
 
     /**

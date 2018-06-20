@@ -38,18 +38,15 @@ import java.util.Map;
 public class ElasticSearchTest2 {
 
     private TransportClient client;
-    private String index = "bigdata";
+    private String index = "project_study";
     private String type = "product";
-    private String[] indics = {"bigdata", "bank"};
 
     @Before
     public void setUp() throws UnknownHostException {
-        Settings settings = Settings.builder().put("cluster.name", "bigdata-08-28").build();
+        Settings settings = Settings.builder().put("cluster.name", "elasticsearch").build();
         client = TransportClient.builder().settings(settings).build();
-        TransportAddress ta1 = new InetSocketTransportAddress(InetAddress.getByName("uplooking01"), 9300);
-        TransportAddress ta2 = new InetSocketTransportAddress(InetAddress.getByName("uplooking02"), 9300);
-        TransportAddress ta3 = new InetSocketTransportAddress(InetAddress.getByName("uplooking03"), 9300);
-        client.addTransportAddresses(ta1, ta2, ta3);
+        TransportAddress ta = new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300);
+        client.addTransportAddresses(ta);
     }
 
     /**
@@ -59,7 +56,7 @@ public class ElasticSearchTest2 {
      */
     @Test
     public void testSearch1() {
-        SearchRequestBuilder searchQuery = client.prepareSearch(indics)    // 在prepareSearch()的参数为索引库列表，意为要从哪些索引库中进行查询
+        SearchRequestBuilder searchQuery = client.prepareSearch(index)    // 在prepareSearch()的参数为索引库列表，意为要从哪些索引库中进行查询
                 .setSearchType(SearchType.DEFAULT)  // 设置查询类型，有QUERY_AND_FETCH  QUERY_THEN_FETCH  DFS_QUERY_AND_FETCH  DFS_QUERY_THEN_FETCH
                 .setQuery(QueryBuilders.termQuery("author", "apache"))// 设置相应的query，用于检索，termQuery的参数说明：name是doc中的具体的field，value就是要找的具体的值
                 ;
@@ -75,8 +72,8 @@ public class ElasticSearchTest2 {
      */
     @Test
     public void testSearch2() {
-        SearchResponse response = client.prepareSearch(indics).setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.prefixQuery("name", "h"))
+        SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.prefixQuery("name", "f"))
                 .get();
         showResult(response);
     }
@@ -98,8 +95,8 @@ public class ElasticSearchTest2 {
     @Test
     public void testSearch3() {
         // 注意QUERY_THEN_FETCH和注意QUERY_AND_FETCH返回的记录数不一样，前者默认10条，后者是50条（5个分片）
-        SearchResponse response = client.prepareSearch(indics).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.rangeQuery("age").gt(25).lte(35))
+        SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.rangeQuery("size").gt(1).lte(10))
                 // 下面setFrom和setSize用于设置查询结果进行分页
                 .setFrom(0)
                 .setSize(5)
@@ -118,7 +115,7 @@ public class ElasticSearchTest2 {
      */
     @Test
     public void testSearch4() {
-        SearchResponse response = client.prepareSearch(indics).setSearchType(SearchType.DEFAULT)
+        SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DEFAULT)
 //                .setQuery(QueryBuilders.multiMatchQuery("apache", "author", "url"))
 //                .setQuery(QueryBuilders.regexpQuery("url", ".*apache.*"))
 //                .setQuery(QueryBuilders.termQuery("author", "apache"))
@@ -167,9 +164,9 @@ public class ElasticSearchTest2 {
     @Test
     public void testSearch5() {
         // 注意QUERY_THEN_FETCH和注意QUERY_AND_FETCH返回的记录数不一样，前者默认10条，后者是50条（5个分片）
-        SearchResponse response = client.prepareSearch(indics).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.rangeQuery("age").gt(25).lte(35))
-                .addSort("balance", SortOrder.DESC)
+        SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.rangeQuery("size").gt(1).lte(9))
+                .addSort("author", SortOrder.DESC)
                 // 下面setFrom和setSize用于设置查询结果进行分页
                 .setFrom(0)
                 .setSize(5)
@@ -182,16 +179,15 @@ public class ElasticSearchTest2 {
      */
     @Test
     public void testSearch6() {
-        indics = new String[]{"bank"};
         // 注意QUERY_THEN_FETCH和注意QUERY_AND_FETCH返回的记录数不一样，前者默认10条，后者是50条（5个分片）
-        SearchResponse response = client.prepareSearch(indics).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.rangeQuery("age").gt(25).lte(35))
+        SearchResponse response = client.prepareSearch(index).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.rangeQuery("size").gt(1).lte(9))
                 /*
                     select avg(age) as avg_name from person;
                     那么这里的avg("balance")--->就是返回结果avg_name这个别名
                  */
-                .addAggregation(AggregationBuilders.avg("avg_balance").field("balance"))
-                .addAggregation(AggregationBuilders.max("max").field("balance"))
+                .addAggregation(AggregationBuilders.avg("avg_size").field("size"))
+                .addAggregation(AggregationBuilders.max("max_size").field("size"))
                 .get();
 //        System.out.println(response);
         /*
